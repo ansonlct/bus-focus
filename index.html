@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <meta content="yes" name="apple-mobile-web-app-capable"/>
+  <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+  <meta content="交通班次" name="apple-mobile-web-app-title"/>
+  <!-- 圖示設定 -->
+  <link href="bus-logo.jpg" rel="apple-touch-icon" sizes="180x180"/>
+  <link href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🚇%3C/text%3E%3C/svg%3E" rel="icon" type="image/x-icon"/>
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <title>
+   香港交通班次查詢
+  </title>
+  <link href="style.css" rel="stylesheet"/>
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+ </head>
+ <body>
+  
+  <!-- 新增：動態背景層 -->
+  <div class="main-bg-layer"></div>
+
+  <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar(false)">
+  </div>
+  <div class="sidebar" id="sidebar">
+   <div class="sidebar-header">
+    <span class="sidebar-title">
+     已儲存項目
+    </span>
+    <span onclick="toggleSidebar(false)" style="cursor:pointer; padding:5px; font-size:1.2rem;">
+     ✕
+    </span>
+   </div>
+   <div class="sidebar-settings">
+    <span class="setting-label">
+     黑暗模式
+    </span>
+    <label class="ios-switch">
+     <input id="dm-toggle" onchange="toggleDarkMode()" type="checkbox"/>
+     <span class="slider">
+     </span>
+    </label>
+   </div>
+   <div class="sidebar-settings">
+    <span class="setting-label">
+     地圖功能 (Beta)
+    </span>
+    <label class="ios-switch">
+     <input id="map-toggle" onchange="toggleMapSetting()" type="checkbox"/>
+     <span class="slider">
+     </span>
+    </label>
+   </div>
+   <div class="sidebar-settings">
+    <span class="setting-label">
+     閃爍模式
+    </span>
+    <label class="ios-switch">
+     <input id="flash-toggle" onchange="toggleFlashSetting()" type="checkbox"/>
+     <span class="slider">
+     </span>
+    </label>
+   </div>
+   
+   <div class="sidebar-content" id="saved-list-container">
+   </div>
+   <div class="sidebar-footer">
+    <button class="save-all-btn" onclick="saveCurrentAsGroup()">
+     ＋ 儲存當前版面
+    </button>
+    <button class="edit-mode-btn" id="edit-btn" onclick="toggleEditMode()">
+     ✎
+    </button>
+   </div>
+  </div>
+  <div class="container">
+   <!-- 搜尋區 (樣式將透過 CSS 改為懸浮玻璃) -->
+   <div class="search-area">
+    <div class="menu-btn" onclick="toggleSidebar(true)">
+     ☰
+    </div>
+    <button class="mtr-trigger-btn" id="mtr-btn-top" onclick="toggleMtrPopup('top')">
+     🚇
+    </button>
+    <div class="mtr-popup top-popup" id="mtr-popup-top" onclick="event.stopPropagation()">
+     <div class="mtr-popup-arrow top-arrow">
+     </div>
+     <div style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--text-sub);">
+      選擇港鐵路綫
+     </div>
+     <div class="mtr-grid" id="mtr-grid-top">
+     </div>
+    </div>
+    <div class="search-wrapper">
+     <input autocomplete="off" class="search-input" id="route-input" onfocus="handleInput(this, 'suggestions', 'clear-search')" oninput="debouncedHandleInput(this, 'suggestions', 'clear-search')" onkeypress="if(event.key==='Enter') searchTopItem()" placeholder="輸入路線 / 車站" type="text" value=""/>
+     <div class="clear-input-btn" id="clear-search" onclick="clearSearch('route-input')">
+      ✕
+     </div>
+     <div class="suggestions-list" id="suggestions">
+     </div>
+    </div>
+    <button class="search-btn" id="search-btn" onclick="searchTopItem()">
+     查詢
+    </button>
+   </div>
+   <div class="content-scroll">
+    <div id="cards-container">
+     <div id="empty-state">
+      <div class="big-icon">
+       🚍
+      </div>
+      <div>
+       請輸入巴士路線、港鐵綫或車站開始查詢
+      </div>
+     </div>
+    </div>
+    <div id="add-card-section">
+     <button class="add-circle-btn" id="show-add-btn" onclick="toggleAddSearch(true)">
+      ＋
+     </button>
+     <div id="add-search-wrapper">
+      <button class="mtr-trigger-btn" id="mtr-btn-bottom" onclick="toggleMtrPopup('bottom')">
+       🚇
+      </button>
+      <div class="mtr-popup bottom-popup" id="mtr-popup-bottom" onclick="event.stopPropagation()">
+       <div class="mtr-popup-arrow bottom-arrow">
+       </div>
+       <div style="font-weight:700; margin-bottom:8px; font-size:0.85rem; color:var(--text-sub);">
+        選擇港鐵路綫
+       </div>
+       <div class="mtr-grid" id="mtr-grid-bottom">
+       </div>
+      </div>
+      <div class="search-wrapper">
+       <input autocomplete="off" class="search-input" id="add-route-input" onfocus="handleInput(this, 'add-suggestions', 'add-clear-search')" oninput="debouncedHandleInput(this, 'add-suggestions', 'add-clear-search')" onkeypress="if(event.key==='Enter') addItem()" placeholder="輸入路線 / 車站" type="text" value=""/>
+       <div class="clear-input-btn" id="add-clear-search" onclick="clearSearch('add-route-input')">
+        ✕
+       </div>
+       <div class="suggestions-list" id="add-suggestions">
+       </div>
+      </div>
+      <button class="search-btn" onclick="addItem()">
+       新增
+      </button>
+      <button class="search-btn" onclick="toggleAddSearch(false)" style="background:var(--text-sub)">
+       ✕
+      </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+ </body>
+</html>

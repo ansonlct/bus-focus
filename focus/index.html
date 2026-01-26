@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <title>車站班次</title>
+    <!-- 引用上一層的 style.css -->
+    <link href="../style.css" rel="stylesheet"/>
+</head>
+<body class="focus-mode-body">
+    <!-- 背景層 (會根據路線變色) -->
+    <div id="focus-bg" class="focus-bg-layer"></div>
+
+    <div class="focus-wrapper">
+        <div class="focus-nav">
+            <!-- 使用 JS 綁定返回事件，而非 onclick -->
+            <div class="back-btn" onclick="history.back()">✕</div>
+            <div class="focus-route-badge" id="focus-badge"></div>
+        </div>
+
+        <div class="focus-content">
+            <div class="focus-station-info">
+                <div class="focus-sub-label">目前車站</div>
+                <div class="focus-station-name" id="focus-station">載入中...</div>
+                <div class="focus-dir-info" id="focus-dir"></div>
+            </div>
+
+            <div class="focus-timer-container">
+                <div class="focus-next-label">最近班次</div>
+                <div class="focus-big-time" id="focus-main-time">--</div>
+                <div class="focus-time-desc" id="focus-main-desc">--</div>
+            </div>
+
+            <div class="focus-list-container">
+                <div class="focus-list-label">後續班次</div>
+                <div id="focus-list" class="focus-list">
+                    <!-- JS 生成列表 -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="focus-footer">
+            最後更新: <span id="last-update">--:--</span>
+        </div>
+    </div>
+
+    <!-- 引用 JS (注意：路徑指向上一層的 js 資料夾) -->
+    <script type="module" src="../js/focus.js"></script>
+</body>
+</html>
